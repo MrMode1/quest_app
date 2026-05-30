@@ -9,7 +9,12 @@ import { parsedQuoteSchema } from "@shared/schema";
  * back to OpenAI, change the import in server/routes.ts from "./lib/ai" to
  * "./lib/openai" (both export `parseQuoteWithAI`).
  */
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Lazy init so a missing key fails at call time (caught by processQuote), not at module load.
+let _anthropic: Anthropic | null = null;
+function getAnthropic(): Anthropic {
+  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return _anthropic;
+}
 
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
 
@@ -29,7 +34,7 @@ function stripFences(text: string): string {
 }
 
 export async function parseQuoteWithAI(text: string) {
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: MODEL,
     max_tokens: 8000,
     system: SYSTEM_PROMPT,
