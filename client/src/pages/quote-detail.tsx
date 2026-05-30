@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link, useRoute } from "wouter";
 import { ArrowLeft, Download, FileSpreadsheet, Loader2, Play, RefreshCw } from "lucide-react";
 import type { QuoteItem } from "@shared/schema";
@@ -53,6 +54,13 @@ export default function QuoteDetail() {
   const id = params ? Number(params.id) : undefined;
   const { data, isLoading } = useQuote(id);
   const processQuote = useProcessQuote();
+  const autoProcessTriggered = useRef(false);
+
+  useEffect(() => {
+    if (!data?.quote || data.quote.status !== "pending" || autoProcessTriggered.current) return;
+    autoProcessTriggered.current = true;
+    processQuote.mutate(data.quote.id);
+  }, [data?.quote?.id, data?.quote?.status, processQuote]);
 
   if (isLoading || !data) {
     return (

@@ -14,6 +14,7 @@ export interface IStorage {
   getQuote(id: number): Promise<Quote | undefined>;
   createQuote(data: InsertQuote): Promise<Quote>;
   setQuoteStatus(id: number, status: string): Promise<void>;
+  setQuoteFileData(id: number, fileData: string): Promise<void>;
   deleteQuote(id: number): Promise<void>;
   getQuoteItems(quoteId: number): Promise<QuoteItem[]>;
   clearQuoteItems(quoteId: number): Promise<void>;
@@ -42,6 +43,10 @@ class DbStorage implements IStorage {
 
   async setQuoteStatus(id: number, status: string): Promise<void> {
     await db.update(quotes).set({ status }).where(eq(quotes.id, id));
+  }
+
+  async setQuoteFileData(id: number, fileData: string): Promise<void> {
+    await db.update(quotes).set({ fileData }).where(eq(quotes.id, id));
   }
 
   async deleteQuote(id: number): Promise<void> {

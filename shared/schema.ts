@@ -6,6 +6,8 @@ export const quotes = pgTable("quotes", {
   id: serial("id").primaryKey(),
   filename: text("filename").notNull(),
   originalContent: text("original_content"),
+  /** Base64-encoded upload bytes — used on Vercel where disk storage is ephemeral. */
+  fileData: text("file_data"),
   status: text("status").notNull().default("pending"), // pending | processing | reviewed | error
   createdAt: timestamp("created_at").defaultNow(),
 });

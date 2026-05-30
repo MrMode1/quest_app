@@ -10,18 +10,16 @@ const require = createRequire(import.meta.url);
  * Extracts plain text from an uploaded quote file so it can be handed to the AI.
  * Supports PDF, Excel (.xlsx/.xls), CSV, and a utf-8 fallback for everything else.
  */
-export async function extractText(filePath: string): Promise<string> {
-  const ext = path.extname(filePath).toLowerCase();
+export async function extractTextFromBuffer(buffer: Buffer, filename: string): Promise<string> {
+  const ext = path.extname(filename).toLowerCase();
 
   if (ext === ".pdf") {
     const pdf = require("pdf-parse");
-    const buffer = await fs.readFile(filePath);
     const data = await pdf(buffer);
     return data.text;
   }
 
   if (ext === ".xlsx" || ext === ".xls") {
-    const buffer = await fs.readFile(filePath);
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const parts: string[] = [];
     for (const sheetName of workbook.SheetNames) {
@@ -33,9 +31,14 @@ export async function extractText(filePath: string): Promise<string> {
   }
 
   if (ext === ".csv") {
-    return fs.readFile(filePath, "utf-8");
+    return buffer.toString("utf-8");
   }
 
-  // Fallback: treat as utf-8 text.
-  return fs.readFile(filePath, "utf-8");
+  return buffer.toString("utf-8");
+}
+
+/** Disk-based helper used by local/Railway deployments. */
+export async function extractText(filePath: string): Promise<string> {
+  const buffer = await fs.readFile(filePath);
+  return extractTextFromBuffer(buffer, path.basename(filePath));
 }

@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
-  // 1) Build the frontend with Vite -> dist/public
+  // 1) Build the frontend with Vite -> public/
   console.log("Building client with Vite...");
   await viteBuild({ configFile: path.resolve(root, "vite.config.ts") });
 

@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 
 const clientRoot = path.resolve(process.cwd(), "client");
-const distPublic = path.resolve(process.cwd(), "dist", "public");
+const staticRoot = path.resolve(process.cwd(), "public");
 
 /** Dev: mount Vite in middleware mode so the server serves the SPA + HMR. */
 export async function setupVite(app: Express, server: Server) {
@@ -33,13 +33,13 @@ export async function setupVite(app: Express, server: Server) {
   });
 }
 
-/** Prod: serve the built client from dist/public with SPA fallback. */
+/** Prod: serve the built client from public/ with SPA fallback. */
 export function serveStatic(app: Express) {
-  if (!fs.existsSync(distPublic)) {
-    throw new Error(`Build output not found at ${distPublic}. Run "npm run build" first.`);
+  if (!fs.existsSync(staticRoot)) {
+    throw new Error(`Build output not found at ${staticRoot}. Run "npm run build" first.`);
   }
-  app.use(express.static(distPublic));
+  app.use(express.static(staticRoot));
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPublic, "index.html"));
+    res.sendFile(path.resolve(staticRoot, "index.html"));
   });
 }
