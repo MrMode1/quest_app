@@ -51,5 +51,3 @@ export function buildApp(): express.Express {
 
   return app;
 }
-
-export default buildApp();

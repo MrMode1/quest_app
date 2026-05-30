@@ -1,10 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { createRequire } from "module";
 import * as XLSX from "xlsx";
-
-// pdf-parse is CommonJS; load it via createRequire so it works under ESM.
-const require = createRequire(import.meta.url);
 
 /**
  * Extracts plain text from an uploaded quote file so it can be handed to the AI.
@@ -14,8 +10,9 @@ export async function extractTextFromBuffer(buffer: Buffer, filename: string): P
   const ext = path.extname(filename).toLowerCase();
 
   if (ext === ".pdf") {
-    const pdf = require("pdf-parse");
-    const data = await pdf(buffer);
+    // Dynamic import works in both ESM and CJS; avoids import.meta.url at module level.
+    const pdfParse = await import("pdf-parse").then((m) => m.default ?? m);
+    const data = await pdfParse(buffer);
     return data.text;
   }
 
