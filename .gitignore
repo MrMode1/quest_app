@@ -1,0 +1,9 @@
+node_modules/
+.tools/
+dist/
+uploads/
+.env
+.env.local
+*.log
+.DS_Store
+drizzle/
