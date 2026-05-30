@@ -58,22 +58,34 @@ export async function processQuote(id: number): Promise<void> {
     await storage.setQuoteStatus(id, "reviewed");
   } catch (err) {
     console.error(`[process] quote ${id} failed:`, err);
-    await storage.setQuoteStatus(id, "error");
+    await storage.setQuoteStatus(id, "error").catch((e) =>
+      console.error(`[process] failed to set error status for quote ${id}:`, e),
+    );
   }
 }
 
 export function registerRoutes(app: Express): void {
   app.get("/api/quotes", async (_req: Request, res: Response) => {
-    const quotes = await storage.listQuotes();
-    res.json(quotes);
+    try {
+      const quotes = await storage.listQuotes();
+      res.json(quotes);
+    } catch (err) {
+      console.error("[GET /api/quotes] failed:", err);
+      res.status(500).json({ message: err instanceof Error ? err.message : "Failed to list quotes" });
+    }
   });
 
   app.get("/api/quotes/:id", async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const quote = await storage.getQuote(id);
-    if (!quote) return res.status(404).json({ message: "Quote not found" });
-    const items = await storage.getQuoteItems(id);
-    res.json({ quote, items });
+    try {
+      const id = Number(req.params.id);
+      const quote = await storage.getQuote(id);
+      if (!quote) return res.status(404).json({ message: "Quote not found" });
+      const items = await storage.getQuoteItems(id);
+      res.json({ quote, items });
+    } catch (err) {
+      console.error("[GET /api/quotes/:id] failed:", err);
+      res.status(500).json({ message: err instanceof Error ? err.message : "Failed to get quote" });
+    }
   });
 
   app.post("/api/quotes", (req, res, next) => {
@@ -103,56 +115,76 @@ export function registerRoutes(app: Express): void {
   });
 
   app.post("/api/quotes/:id/process", async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const quote = await storage.getQuote(id);
-    if (!quote) return res.status(404).json({ message: "Quote not found" });
-    if (quote.status === "processing") {
-      return res.json({ message: "Already processing", quote });
-    }
+    try {
+      const id = Number(req.params.id);
+      const quote = await storage.getQuote(id);
+      if (!quote) return res.status(404).json({ message: "Quote not found" });
+      if (quote.status === "processing") {
+        return res.json({ message: "Already processing", quote });
+      }
 
-    await processQuote(id);
-    const updated = await storage.getQuote(id);
-    res.json({ message: "Processing complete", quote: updated });
+      await processQuote(id);
+      const updated = await storage.getQuote(id);
+      res.json({ message: "Processing complete", quote: updated });
+    } catch (err) {
+      console.error("[POST /api/quotes/:id/process] failed:", err);
+      res.status(500).json({ message: err instanceof Error ? err.message : "Processing failed" });
+    }
   });
 
   app.put("/api/quotes/:quoteId/items/:itemId", async (req: Request, res: Response) => {
-    const quoteId = Number(req.params.quoteId);
-    const itemId = Number(req.params.itemId);
+    try {
+      const quoteId = Number(req.params.quoteId);
+      const itemId = Number(req.params.itemId);
 
-    const patchSchema = insertQuoteItemSchema.partial();
-    const result = patchSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ message: "Invalid item", errors: result.error.flatten() });
+      const patchSchema = insertQuoteItemSchema.partial();
+      const result = patchSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid item", errors: result.error.flatten() });
+      }
+
+      const updated = await storage.updateQuoteItem(quoteId, itemId, result.data);
+      if (!updated) return res.status(404).json({ message: "Item not found" });
+      res.json(updated);
+    } catch (err) {
+      console.error("[PUT /api/quotes/:quoteId/items/:itemId] failed:", err);
+      res.status(500).json({ message: err instanceof Error ? err.message : "Update failed" });
     }
-
-    const updated = await storage.updateQuoteItem(quoteId, itemId, result.data);
-    if (!updated) return res.status(404).json({ message: "Item not found" });
-    res.json(updated);
   });
 
   app.get("/api/quotes/:id/export", async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const quote = await storage.getQuote(id);
-    if (!quote) return res.status(404).json({ message: "Quote not found" });
-    const items = await storage.getQuoteItems(id);
+    try {
+      const id = Number(req.params.id);
+      const quote = await storage.getQuote(id);
+      if (!quote) return res.status(404).json({ message: "Quote not found" });
+      const items = await storage.getQuoteItems(id);
 
-    const buffer = await buildQuestivityExcel(quote, items);
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${questivityFilename(id)}"`,
-    );
-    res.send(buffer);
+      const buffer = await buildQuestivityExcel(quote, items);
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${questivityFilename(id)}"`,
+      );
+      res.send(buffer);
+    } catch (err) {
+      console.error("[GET /api/quotes/:id/export] failed:", err);
+      res.status(500).json({ message: err instanceof Error ? err.message : "Export failed" });
+    }
   });
 
   app.delete("/api/quotes/:id", async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const quote = await storage.getQuote(id);
-    await storage.deleteQuote(id);
-    if (quote) await deleteUpload(quote);
-    res.json({ message: "Deleted" });
+    try {
+      const id = Number(req.params.id);
+      const quote = await storage.getQuote(id);
+      await storage.deleteQuote(id);
+      if (quote) await deleteUpload(quote);
+      res.json({ message: "Deleted" });
+    } catch (err) {
+      console.error("[DELETE /api/quotes/:id] failed:", err);
+      res.status(500).json({ message: err instanceof Error ? err.message : "Delete failed" });
+    }
   });
 }
