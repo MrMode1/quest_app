@@ -76,7 +76,15 @@ export function registerRoutes(app: Express): void {
     res.json({ quote, items });
   });
 
-  app.post("/api/quotes", upload.single("file"), async (req: Request, res: Response) => {
+  app.post("/api/quotes", (req, res, next) => {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        console.error("[upload] multer error:", err);
+        return res.status(400).json({ message: err.message || "Invalid upload" });
+      }
+      next();
+    });
+  }, async (req: Request, res: Response) => {
     try {
       if (!req.file) return res.status(400).json({ message: "No file uploaded (field 'file')" });
 
@@ -88,8 +96,9 @@ export function registerRoutes(app: Express): void {
       await saveUpload(quote.id, req.file.buffer, req.file.originalname);
       res.status(201).json(quote);
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed";
       console.error("[upload] failed:", err);
-      res.status(500).json({ message: "Upload failed" });
+      res.status(500).json({ message });
     }
   });
 

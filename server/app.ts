@@ -14,8 +14,14 @@ export function buildApp(): express.Express {
     app.set("trust proxy", 1);
   }
 
-  app.use(express.json({ limit: "5mb" }));
-  app.use(express.urlencoded({ extended: false }));
+  app.use((req, res, next) => {
+    const contentType = req.headers["content-type"] ?? "";
+    if (contentType.includes("multipart/form-data")) return next();
+    express.json({ limit: "5mb" })(req, res, (err) => {
+      if (err) return next(err);
+      express.urlencoded({ extended: false })(req, res, next);
+    });
+  });
 
   app.use(
     session({

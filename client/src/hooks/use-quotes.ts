@@ -44,8 +44,14 @@ export function useCreateQuote() {
       // Plain fetch — multipart upload must not set Content-Type manually.
       const res = await fetch("/api/quotes", { method: "POST", body: form, credentials: "include" });
       if (!res.ok) {
-        const text = await res.text().catch(() => res.statusText);
-        throw new Error(`${res.status}: ${text}`);
+        let detail = await res.text().catch(() => res.statusText);
+        try {
+          const parsed = JSON.parse(detail) as { message?: string };
+          if (parsed.message) detail = parsed.message;
+        } catch {
+          /* keep raw text */
+        }
+        throw new Error(detail || `Upload failed (${res.status})`);
       }
       return res.json() as Promise<Quote>;
     },
