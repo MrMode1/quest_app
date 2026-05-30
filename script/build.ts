@@ -6,35 +6,24 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
+const sharedAlias = { "@shared": path.resolve(root, "shared") };
+
 async function main() {
   // 1) Build the frontend with Vite -> public/
   console.log("Building client with Vite...");
   await viteBuild({ configFile: path.resolve(root, "vite.config.ts") });
 
-  // 2) Bundle the server with esbuild -> dist/index.js (ESM)
+  // 2) Bundle the server with esbuild -> dist/index.js (CJS, for Railway/local)
   console.log("Bundling server with esbuild...");
   await esbuild({
     entryPoints: [path.resolve(root, "server", "index.ts")],
     bundle: true,
-    format: "esm",
+    format: "cjs",
     platform: "node",
     target: "node20",
     outfile: path.resolve(root, "dist", "index.js"),
-    // Make ALL dependencies external (Node builtins + every npm package).
-    // Bundling npm packages here causes CJS/ESM interop conflicts.
     packages: "external",
-    // Resolve the @shared/* path alias at build time.
-    alias: {
-      "@shared": path.resolve(root, "shared"),
-    },
-    banner: {
-      js: [
-        'import { fileURLToPath as __ftu } from "url";',
-        'import { dirname as __dn } from "path";',
-        "const __filename = __ftu(import.meta.url);",
-        "const __dirname = __dn(__filename);",
-      ].join("\n"),
-    },
+    alias: sharedAlias,
   });
 
   console.log("Build complete -> dist/");

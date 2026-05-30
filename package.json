@@ -1,7 +1,6 @@
 {
   "name": "questivity-quote-converter",
   "version": "1.0.0",
-  "type": "module",
   "license": "MIT",
   "description": "Converts distributor quote files (PDF, Excel, CSV) into a standardized Questivity Quote format using OpenAI.",
   "scripts": {
