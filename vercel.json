@@ -9,10 +9,6 @@
     "api/[...path].js": {
       "maxDuration": 60,
       "memory": 1024
-    },
-    "api/index.js": {
-      "maxDuration": 60,
-      "memory": 1024
     }
   }
 }

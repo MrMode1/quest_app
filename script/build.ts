@@ -28,7 +28,7 @@ async function main() {
 
   // 3) Bundle Vercel API functions -> api/*.js (CJS, local code bundled inline)
   console.log("Bundling Vercel API functions...");
-  for (const entry of ["[...path].ts", "index.ts"]) {
+  for (const entry of ["[...path].ts"]) {
     await esbuild({
       entryPoints: [path.resolve(root, "api", entry)],
       bundle: true,
