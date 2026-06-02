@@ -53,7 +53,7 @@ function downloadCsv(filename: string, items: QuoteItem[]) {
 export default function QuoteDetail() {
   const [, params] = useRoute("/quotes/:id");
   const id = params ? Number(params.id) : undefined;
-  const { data, isLoading, isError } = useQuote(id);
+  const { data, isLoading, isError, error } = useQuote(id);
   const processQuote = useProcessQuote();
   const autoProcessTriggered = useRef(false);
   const { toast } = useToast();
@@ -81,10 +81,21 @@ export default function QuoteDetail() {
     );
   }
 
-  if (isError || !data) {
+  if (isError) {
     return (
-      <div className="flex h-full items-center justify-center p-16 text-destructive">
-        Failed to load quote. Please refresh the page.
+      <div className="flex h-full flex-col items-center justify-center gap-2 p-16 text-destructive">
+        <p className="font-medium">Failed to load quote.</p>
+        {error instanceof Error && (
+          <p className="text-sm opacity-80">{error.message}</p>
+        )}
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex h-full items-center justify-center p-16 text-muted-foreground">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading quote…
       </div>
     );
   }

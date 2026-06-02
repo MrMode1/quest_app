@@ -148,7 +148,7 @@ export default function Dashboard() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
-                        onSelect={() => setTarget(q)}
+                        onSelect={(e) => { e.preventDefault(); setTarget(q); }}
                       >
                         <Trash2 className="h-4 w-4" /> Delete
                       </DropdownMenuItem>
