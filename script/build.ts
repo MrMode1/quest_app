@@ -26,20 +26,18 @@ async function main() {
     alias: sharedAlias,
   });
 
-  // 3) Bundle Vercel API functions -> api/*.js (CJS, local code bundled inline)
-  console.log("Bundling Vercel API functions...");
-  for (const entry of ["[...path].ts"]) {
-    await esbuild({
-      entryPoints: [path.resolve(root, "api", entry)],
-      bundle: true,
-      format: "cjs",
-      platform: "node",
-      target: "node20",
-      outfile: path.resolve(root, "api", entry.replace(".ts", ".js")),
-      packages: "external",
-      alias: sharedAlias,
-    });
-  }
+  // 3) Bundle Vercel API function -> api/[...path].js (CJS, local code bundled inline)
+  console.log("Bundling Vercel API function...");
+  await esbuild({
+    entryPoints: [path.resolve(root, "server", "vercel-entry.ts")],
+    bundle: true,
+    format: "cjs",
+    platform: "node",
+    target: "node20",
+    outfile: path.resolve(root, "api", "[...path].js"),
+    packages: "external",
+    alias: sharedAlias,
+  });
 
   console.log("Build complete -> dist/ + api/*.js");
 }
