@@ -6,6 +6,7 @@ import { useQuote, useProcessQuote } from "@/hooks/use-quotes";
 import { StatusBadge } from "@/components/status-badge";
 import { QuoteTable } from "@/components/quote-table";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { num } from "@/lib/utils";
 
 function downloadCsv(filename: string, items: QuoteItem[]) {
@@ -52,20 +53,38 @@ function downloadCsv(filename: string, items: QuoteItem[]) {
 export default function QuoteDetail() {
   const [, params] = useRoute("/quotes/:id");
   const id = params ? Number(params.id) : undefined;
-  const { data, isLoading } = useQuote(id);
+  const { data, isLoading, isError } = useQuote(id);
   const processQuote = useProcessQuote();
   const autoProcessTriggered = useRef(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!data?.quote || data.quote.status !== "pending" || autoProcessTriggered.current) return;
     autoProcessTriggered.current = true;
-    processQuote.mutate(data.quote.id);
-  }, [data?.quote?.id, data?.quote?.status, processQuote]);
+    processQuote.mutate(data.quote.id, {
+      onError: () => {
+        autoProcessTriggered.current = false;
+        toast({
+          title: "Processing failed",
+          description: "Could not start AI extraction. Use the Process button to retry.",
+          variant: "destructive",
+        });
+      },
+    });
+  }, [data?.quote?.id, data?.quote?.status, processQuote, toast]);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center p-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading quote…
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="flex h-full items-center justify-center p-16 text-destructive">
+        Failed to load quote. Please refresh the page.
       </div>
     );
   }

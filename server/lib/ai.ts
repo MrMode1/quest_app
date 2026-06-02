@@ -34,17 +34,31 @@ function stripFences(text: string): string {
 }
 
 export async function parseQuoteWithAI(text: string) {
-  const response = await getAnthropic().messages.create({
-    model: MODEL,
-    max_tokens: 8000,
-    system: SYSTEM_PROMPT,
-    messages: [
+  const controller = new AbortController();
+  // Abort well before Vercel's 60s function limit so the catch block in
+  // processQuote always runs and sets status → "error" instead of leaving
+  // it stuck at "processing".
+  const timeoutId = setTimeout(() => controller.abort(), 50_000);
+
+  let response: Awaited<ReturnType<typeof getAnthropic>["messages"]["create"]>;
+  try {
+    response = await getAnthropic().messages.create(
       {
-        role: "user",
-        content: `Extract items from this quote as JSON with "items" key:\n\n${text.substring(0, 15000)}`,
+        model: MODEL,
+        max_tokens: 8000,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: `Extract items from this quote as JSON with "items" key:\n\n${text.substring(0, 15000)}`,
+          },
+        ],
       },
-    ],
-  });
+      { signal: controller.signal },
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const raw = response.content
     .map((block) => (block.type === "text" ? block.text : ""))
