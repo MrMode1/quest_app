@@ -13,7 +13,7 @@ async function main() {
   console.log("Building client with Vite...");
   await viteBuild({ configFile: path.resolve(root, "vite.config.ts") });
 
-  // 2) Bundle the server with esbuild -> dist/index.js (CJS, for Railway/local)
+  // 2) Bundle the server with esbuild -> dist/index.cjs (CJS, for Railway/local)
   console.log("Bundling server with esbuild...");
   await esbuild({
     entryPoints: [path.resolve(root, "server", "index.ts")],
@@ -21,27 +21,12 @@ async function main() {
     format: "cjs",
     platform: "node",
     target: "node20",
-    outfile: path.resolve(root, "dist", "index.js"),
+    outfile: path.resolve(root, "dist", "index.cjs"),
     packages: "external",
     alias: sharedAlias,
   });
 
-  // 3) Bundle Vercel API functions -> api/*.js (CJS, so Node runs them without "type":"module")
-  console.log("Bundling Vercel API functions...");
-  for (const entry of ["[...path].ts", "index.ts"]) {
-    await esbuild({
-      entryPoints: [path.resolve(root, "api", entry)],
-      bundle: true,
-      format: "cjs",
-      platform: "node",
-      target: "node20",
-      outfile: path.resolve(root, "api", entry.replace(".ts", ".js")),
-      packages: "external",
-      alias: sharedAlias,
-    });
-  }
-
-  console.log("Build complete -> dist/ + api/*.js");
+  console.log("Build complete -> dist/");
 }
 
 main().catch((err) => {

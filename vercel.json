@@ -6,11 +6,11 @@
     { "source": "/((?!api(?:/|$)|assets/).*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/[...path].js": {
+    "api/[...path].ts": {
       "maxDuration": 60,
       "memory": 1024
     },
-    "api/index.js": {
+    "api/index.ts": {
       "maxDuration": 60,
       "memory": 1024
     }

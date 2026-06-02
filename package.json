@@ -1,12 +1,13 @@
 {
   "name": "questivity-quote-converter",
   "version": "1.0.0",
+  "type": "module",
   "license": "MIT",
   "description": "Converts distributor quote files (PDF, Excel, CSV) into a standardized Questivity Quote format using OpenAI.",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
-    "start": "NODE_ENV=production node dist/index.js",
+    "start": "NODE_ENV=production node dist/index.cjs",
     "db:push": "drizzle-kit push",
     "check": "tsc --noEmit",
     "railway:deploy": "npm run db:push && npm start"
